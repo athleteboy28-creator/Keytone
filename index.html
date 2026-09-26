@@ -12,7 +12,7 @@ label{display:block;font-weight:800;margin:14px 0 7px}textarea{width:100%;height
 @media(max-width:650px){.app{padding:13px;border-radius:17px}h1{font-size:31px}.levels{grid-template-columns:1fr 1fr}.stats{grid-template-columns:1fr 1fr}.stats .stat:last-child{grid-column:1/-1}#target{font-size:16px;min-height:135px}textarea{font-size:16px}.actions{display:grid;grid-template-columns:1fr 1fr}.actions .orange{grid-column:1/-1}}
 
 .dashboard{margin-top:18px;border-top:1px solid #e2e8f0;padding-top:16px}.dashTitle{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}.dashTitle b{color:#4338ca}.badge{font-size:12px;background:#ede9fe;color:#6d28d9;padding:6px 9px;border-radius:999px;font-weight:800}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}.sum{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:10px;text-align:center}.sum small{display:block;color:#64748b}.sum strong{font-size:20px}.chart{height:120px;border:1px solid #e2e8f0;background:#fff;border-radius:13px;padding:10px;display:flex;align-items:flex-end;gap:6px}.cbar{flex:1;min-width:5px;border-radius:6px 6px 2px 2px;background:linear-gradient(180deg,#a855f7,#4f46e5);position:relative}.cbar span{position:absolute;top:-17px;left:50%;transform:translateX(-50%);font-size:9px;color:#64748b;font-weight:700}@media(max-width:650px){.sum{padding:8px 3px}.sum strong{font-size:18px}.chart{height:105px;gap:4px}}
-</style></head><body><main class="app"><h1>⌨️ KEYTONE <span style="font-size:.38em;vertical-align:top">v4</span></h1><div class="sub">200 exercices • 4 niveaux • comptes et sauvegarde en ligne</div>
+</style></head><body><main class="app"><h1>⌨️ KEYTONE <span style="font-size:.38em;vertical-align:top">v4.1</span></h1><div class="sub">200 exercices • 4 niveaux • comptes et sauvegarde en ligne</div>
 <section id="accountBox" style="margin:0 0 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:12px">
 <div id="loggedOut"><b style="color:#4338ca">👤 Compte KEYTONE</b>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px">
@@ -38,7 +38,34 @@ const sb=(window.supabase&&window.supabase.createClient)?window.supabase.createC
 let currentUser=null;
 function authMessage(msg,ok=false){let e=document.getElementById("authMsg");if(e){e.textContent=msg||"";e.style.color=ok?"#15803d":"#dc2626"}}
 function setAuthUI(user){currentUser=user||null;document.getElementById("loggedOut").style.display=user?"none":"block";document.getElementById("loggedIn").style.display=user?"block":"none";document.getElementById("userEmail").textContent=user?.email||""}
-async function loadCloudHistory(){if(!sb||!currentUser)return;let{data,error}=await sb.from("keytone_stats").select("mpm,precision_score,erreurs,niveau,exercice,created_at").eq("user_id",currentUser.id).order("created_at",{ascending:true}).limit(50);if(error){authMessage("Connecté, mais lecture des statistiques impossible : "+error.message);return}if(data&&data.length){let cloud=data.map(x=>({w:Number(x.mpm)||0,a:Math.round(Number(x.precision_score)||0),e:Number(x.erreurs)||0,l:Number(x.niveau)||1,t:new Date(x.created_at).getTime()}));localStorage.setItem("kt_history",JSON.stringify(cloud.slice(-50)));drawHistory()}}
+async function loadCloudHistory(){
+  if(!sb||!currentUser)return;
+  let{data,error}=await sb.from("keytone_stats")
+    .select("mpm,precision_score,erreurs,niveau,exercice,created_at")
+    .eq("user_id",currentUser.id)
+    .order("created_at",{ascending:true})
+    .limit(50);
+  if(error){authMessage("Connecté, mais lecture des statistiques impossible : "+error.message);return}
+  if(data&&data.length){
+    let cloud=data.map(x=>({w:Number(x.mpm)||0,a:Math.round(Number(x.precision_score)||0),e:Number(x.erreurs)||0,l:Number(x.niveau)||1,x:Number(x.exercice)||1,t:new Date(x.created_at).getTime()}));
+    localStorage.setItem("kt_history",JSON.stringify(cloud.slice(-50)));
+    for(let n=1;n<=4;n++){
+      let rows=cloud.filter(x=>x.l===n);
+      if(rows.length){
+        let best=Math.max(...rows.map(x=>x.w));
+        localStorage.setItem("kt_b_"+n,String(best));
+        let last=rows[rows.length-1];
+        localStorage.setItem("kt_i_"+n,String((Math.max(1,last.x)%50)));
+      }
+    }
+    drawHistory();
+    load();
+    authMessage("✓ Progression synchronisée depuis le nuage.",true);
+  }else{
+    drawHistory();
+    authMessage("✓ Connexion réussie. Aucune statistique en ligne à récupérer pour le moment.",true);
+  }
+}
 async function saveCloudSession(m){if(!sb||!currentUser)return;let{error}=await sb.from("keytone_stats").insert({user_id:currentUser.id,niveau:String(level),mpm:m.w,precision_score:m.a,erreurs:m.e,exercice:index+1});if(error)authMessage("Session locale enregistrée, mais sauvegarde en ligne impossible : "+error.message);else authMessage("✓ Progression sauvegardée en ligne.",true)}
 async function initAuth(){if(!sb){authMessage("Supabase n’a pas pu être chargé.");return}let{data}=await sb.auth.getSession();setAuthUI(data.session?.user||null);if(currentUser)await loadCloudHistory();sb.auth.onAuthStateChange((_e,s)=>{setAuthUI(s?.user||null);if(s?.user)setTimeout(loadCloudHistory,0)})}
 
