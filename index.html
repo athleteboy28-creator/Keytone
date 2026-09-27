@@ -12,7 +12,7 @@ label{display:block;font-weight:800;margin:14px 0 7px}textarea{width:100%;height
 @media(max-width:650px){.app{padding:13px;border-radius:17px}h1{font-size:31px}.levels{grid-template-columns:1fr 1fr}.stats{grid-template-columns:1fr 1fr}.stats .stat:last-child{grid-column:1/-1}#target{font-size:16px;min-height:135px}textarea{font-size:16px}.actions{display:grid;grid-template-columns:1fr 1fr}.actions .orange{grid-column:1/-1}}
 
 .dashboard{margin-top:18px;border-top:1px solid #e2e8f0;padding-top:16px}.dashTitle{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}.dashTitle b{color:#4338ca}.badge{font-size:12px;background:#ede9fe;color:#6d28d9;padding:6px 9px;border-radius:999px;font-weight:800}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}.sum{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:10px;text-align:center}.sum small{display:block;color:#64748b}.sum strong{font-size:20px}.chart{height:120px;border:1px solid #e2e8f0;background:#fff;border-radius:13px;padding:10px;display:flex;align-items:flex-end;gap:6px}.cbar{flex:1;min-width:5px;border-radius:6px 6px 2px 2px;background:linear-gradient(180deg,#a855f7,#4f46e5);position:relative}.cbar span{position:absolute;top:-17px;left:50%;transform:translateX(-50%);font-size:9px;color:#64748b;font-weight:700}@media(max-width:650px){.sum{padding:8px 3px}.sum strong{font-size:18px}.chart{height:105px;gap:4px}}
-</style></head><body><main class="app"><h1>⌨️ KEYTONE <span style="font-size:.38em;vertical-align:top">v4.4.1</span></h1><div class="sub">200 exercices • 4 niveaux • comptes et sauvegarde en ligne</div>
+</style></head><body><main class="app"><h1>⌨️ KEYTONE <span style="font-size:.38em;vertical-align:top">v4.4.2</span></h1><div class="sub">200 exercices • 4 niveaux • comptes et sauvegarde en ligne</div>
 <section id="accountBox" style="margin:0 0 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:12px">
 <div id="loggedOut"><b style="color:#4338ca">👤 Compte KEYTONE</b>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px">
@@ -81,17 +81,18 @@ function history(){try{return JSON.parse(localStorage.getItem("kt_history")||"[]
 function saveSession(m){let h=history();h.push({w:m.w,a:m.a,e:m.e,l:level,t:Date.now()});localStorage.setItem("kt_history",JSON.stringify(h.slice(-50)));drawHistory();saveCloudSession(m)}
 function drawHistory(){let h=history(),r=h.slice(-10),c=$("chart");$("sessions").textContent=h.length;$("avg").textContent=h.length?Math.round(h.reduce((s,x)=>s+x.w,0)/h.length):0;$("histBest").textContent=h.length?Math.max(...h.map(x=>x.w)):0;c.innerHTML="";if(!r.length){c.innerHTML='<div style="margin:auto;color:#94a3b8;font-size:13px">Termine un exercice pour afficher ta progression.</div>';$("trend").textContent="Aucune session";return}let mx=Math.max(...r.map(x=>x.w),1);r.forEach(x=>{let b=document.createElement("div");b.className="cbar";b.style.height=Math.max(8,x.w/mx*78)+"%";b.title=x.w+" MPM • "+x.a+"%";b.innerHTML="<span>"+x.w+"</span>";c.appendChild(b)});if(r.length>1){let d=r[r.length-1].w-r[r.length-2].w;$("trend").textContent=d>0?"▲ +"+d+" MPM":d<0?"▼ "+d+" MPM":"● Stable"}else $("trend").textContent=r[0].w+" MPM"}
 
-function txt(){return BANK[String(level)][index]}
+let practiceMode=false,practiceText="";
+function txt(){return practiceMode?practiceText:BANK[String(level)][index]}
 function load(){index=Number(localStorage.getItem("kt_i_"+level)||0)%50; $("best").textContent=localStorage.getItem("kt_b_"+level)||0; draw()}
-function draw(){const t=txt(),s=input.value; let h=""; for(let i=0;i<t.length;i++){let c=t[i].replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); let k=i<s.length?(s[i]===t[i]?"ok":"bad"):(i===s.length?"cur":"");h+=k?'<span class="'+k+'">'+c+'</span>':c} $("target").innerHTML=h;$("ex").textContent=`Exercice ${index+1} / 50 — Niveau ${level}`}
+function draw(){const t=txt(),s=input.value; let h=""; for(let i=0;i<t.length;i++){let c=t[i].replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); let k=i<s.length?(s[i]===t[i]?"ok":"bad"):(i===s.length?"cur":"");h+=k?'<span class="'+k+'">'+c+'</span>':c} $("target").innerHTML=h;if(!practiceMode)$("ex").textContent=`Exercice ${index+1} / 50 — Niveau ${level}`}
 function calc(){let s=input.value,t=txt(),e=0;for(let i=0;i<s.length;i++)if(s[i]!==t[i])e++;let correct=Math.max(0,s.length-e),elapsed=60-left,w=elapsed?Math.round((correct/5)/(elapsed/60)):0,a=s.length?Math.round(correct/s.length*100):100;$("wpm").textContent=w;$("acc").textContent=a+"%";$("err").textContent=e;$("prog").style.width=Math.min(100,s.length/t.length*100)+"%";return{w,a,e}}
 function start(){if(running||finished)return;running=true;timer=setInterval(()=>{left--; $("time").textContent=left;calc();if(left<=0)finish(false)},1000)}
 function finish(auto){if(finished)return;finished=true;clearInterval(timer);
 let s=input.value,t=txt(),keys={};try{keys=JSON.parse(localStorage.getItem("kt_keys")||"{}")}catch(e){}
 let sessionKeys={};for(let i=0;i<s.length;i++){if(s[i]!==t[i]&&t[i]&&t[i]!==" "){keys[t[i]]=(keys[t[i]]||0)+1;sessionKeys[t[i]]=(sessionKeys[t[i]]||0)+1}}
 localStorage.setItem("kt_keys",JSON.stringify(keys));localStorage.setItem("kt_last_keys",JSON.stringify(sessionKeys));showKeys();
-let m=calc(),b=Number(localStorage.getItem("kt_b_"+level)||0);if(m.w>b){b=m.w;localStorage.setItem("kt_b_"+level,b)}$("best").textContent=b;$("result").textContent=`Terminé : ${m.w} MPM • ${m.a}% • ${m.e} erreur(s)`;saveSession(m);if(auto)setTimeout(()=>{index=(index+1)%50;localStorage.setItem("kt_i_"+level,index);reset();draw()},1200)}
-function reset(){clearInterval(timer);left=60;running=false;finished=false;input.value="";$("time").textContent=60;$("wpm").textContent=0;$("acc").textContent="100%";$("err").textContent=0;$("prog").style.width="0";$("result").textContent="";draw();input.focus()}
+let m=calc(),b=Number(localStorage.getItem("kt_b_"+level)||0);if(m.w>b){b=m.w;localStorage.setItem("kt_b_"+level,b)}$("best").textContent=b;$("result").textContent=`Terminé : ${m.w} MPM • ${m.a}% • ${m.e} erreur(s)`;saveSession(m);if(auto&&!practiceMode)setTimeout(()=>{index=(index+1)%50;localStorage.setItem("kt_i_"+level,index);reset();draw()},1200)}
+function reset(){clearInterval(timer);left=60;running=false;finished=false;practiceMode=false;practiceText="";input.value="";$("time").textContent=60;$("wpm").textContent=0;$("acc").textContent="100%";$("err").textContent=0;$("prog").style.width="0";$("result").textContent="";draw();input.focus()}
 input.addEventListener("input",()=>{start();draw();calc();if(input.value.length>=txt().length)finish(true)});
 $("restart").onclick=reset;$("other").onclick=()=>{index=(index+1)%50;localStorage.setItem("kt_i_"+level,index);reset()};$("next").onclick=()=>setLevel(level===4?1:level+1);
 function setLevel(n){level=n;document.querySelectorAll(".lvl").forEach(x=>x.classList.toggle("on",Number(x.dataset.l)===n));load();reset()} document.querySelectorAll(".lvl").forEach(x=>x.onclick=()=>setLevel(Number(x.dataset.l)));
@@ -121,7 +122,16 @@ function buildKeyDrill(){
   ];
   return lines.join(" ");
 }
-function startKeyPractice(){let drill=buildKeyDrill();if(!drill)return;reset();$("target").textContent=drill;input.value="";input.placeholder="Entraîne tes touches difficiles ici...";$("ex").textContent="🎯 Entraînement personnalisé — touches difficiles";input.oninput=()=>{if(!running){running=true;started=Date.now();timer=setInterval(()=>{left--;timeEl.textContent=left;calc();if(left<=0)finish()},1000)}let s=input.value,h="";for(let i=0;i<drill.length;i++){let cl=i<s.length?(s[i]===drill[i]?"ok":"bad"):"";h+=`<span class="${cl}">${esc(drill[i])}</span>`}$("target").innerHTML=h;calc();if(input.value.length>=drill.length){input.oninput=null;finish(false)}};input.focus()}
+function startKeyPractice(){
+  let drill=buildKeyDrill();if(!drill)return;
+  clearInterval(timer);left=60;running=false;finished=false;
+  practiceMode=true;practiceText=drill;input.value="";
+  $("time").textContent=60;$("wpm").textContent=0;$("acc").textContent="100%";$("err").textContent=0;
+  $("prog").style.width="0";$("result").textContent="";
+  input.placeholder="Entraîne tes touches difficiles ici...";
+  $("ex").textContent="🎯 Entraînement personnalisé — touches difficiles";
+  draw();input.focus()
+}
 $("practiceKeys").onclick=startKeyPractice;
 document.getElementById("signUpBtn").onclick=async()=>{let email=document.getElementById("authEmail").value.trim(),password=document.getElementById("authPassword").value;if(!email||password.length<6){authMessage("Entre un courriel valide et un mot de passe d’au moins 6 caractères.");return}authMessage("Création du compte...");let{data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname}});if(error)authMessage(error.message);else if(data.session){setAuthUI(data.user);authMessage("✓ Compte créé et connecté.",true)}else authMessage("✓ Compte créé. Vérifie ton courriel pour confirmer l’inscription.",true)};
 document.getElementById("signInBtn").onclick=async()=>{let email=document.getElementById("authEmail").value.trim(),password=document.getElementById("authPassword").value;if(!email||!password){authMessage("Entre ton courriel et ton mot de passe.");return}authMessage("Connexion...");let{data,error}=await sb.auth.signInWithPassword({email,password});if(error)authMessage(error.message);else{setAuthUI(data.user);authMessage("✓ Connexion réussie.",true);await loadCloudHistory()}};
