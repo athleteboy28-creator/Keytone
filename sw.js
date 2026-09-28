@@ -28,22 +28,4 @@ self.addEventListener('activate', event => {
   );
 });
 
-self.addEventListener('fetch', event => {
-  const request = event.request;
-  const url = new URL(request.url);
 
-  // Ne jamais intercepter Supabase ou les requêtes externes
-  if (request.method !== 'GET' || url.origin !== self.location.origin) {
-    return;
-  }
-
-  event.respondWith(
-    fetch(request)
-      .then(response => {
-        const copy = response.clone();
-        caches.open(C).then(cache => cache.put(request, copy));
-        return response;
-      })
-      .catch(() => caches.match(request))
-  );
-});
