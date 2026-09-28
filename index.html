@@ -122,9 +122,9 @@ let m=calc(),b=Number(localStorage.getItem("kt_b_"+level)||0);if(m.w>b){b=m.w;lo
 let bad=typingOps.filter(x=>x[0]!=="ok"),ebox=$("errorDetails"),elist=$("errorList"),esum=$("errorSummary"),etog=$("toggleErrors");
 if(bad.length&&ebox&&elist&&esum&&etog){const nice=c=>c===" "?"[espace]":c;
 let counts={sub:0,del:0,ins:0};bad.forEach(x=>counts[x[0]]++);
-esum.innerHTML=`<b>${bad.length}</b> erreur(s) : ${counts.sub} remplacée(s) • ${counts.del} oubliée(s) • ${counts.ins} ajoutée(s)`;
+esum.innerHTML=`<b>${m.e}</b> erreur(s) : ${counts.sub} remplacée(s) • ${counts.del} oubliée(s) • ${counts.ins} ajoutée(s)`;
 elist.innerHTML=bad.map(([op,a,z],i)=>{let msg=op==="sub"?`Attendu <b>${escHtml(nice(a))}</b> → tapé <b>${escHtml(nice(z))}</b> <small>(remplacée)</small>`:op==="del"?`<b>${escHtml(nice(a))}</b> <small>(lettre oubliée)</small>`:`Ajout de <b>${escHtml(nice(z))}</b> <small>(lettre ajoutée)</small>`;return `<div style="padding:4px 0;border-bottom:1px solid #ffedd5">${i+1}. ${msg}</div>`}).join("");
-elist.style.display="none";etog.textContent=`Voir le détail des ${bad.length} erreurs`;etog.onclick=()=>{let open=elist.style.display!=="none";elist.style.display=open?"none":"block";etog.textContent=open?`Voir le détail des ${bad.length} erreurs`:"Masquer le détail"};ebox.style.display="block"}else if(ebox)ebox.style.display="none";
+elist.style.display="none";etog.textContent=`Voir le détail des ${m.e} erreurs`;etog.onclick=()=>{let open=elist.style.display!=="none";elist.style.display=open?"none":"block";etog.textContent=open?`Voir le détail des ${m.e} erreurs`:"Masquer le détail"};ebox.style.display="block"}else if(ebox)ebox.style.display="none";
 saveSession(m);if(auto&&!practiceMode)setTimeout(()=>{index=(index+1)%50;localStorage.setItem("kt_i_"+level,index);reset();draw()},1200)}
 function reset(){clearInterval(timer);left=60;running=false;finished=false;practiceMode=false;practiceText="";input.value="";if($("errorDetails"))$("errorDetails").style.display="none";$("time").textContent=60;$("wpm").textContent=0;$("acc").textContent="100%";$("err").textContent=0;$("prog").style.width="0";$("result").textContent="";draw();input.focus()}
 input.addEventListener("input",()=>{start();draw();calc();if(input.value.length>=txt().length)finish(true)});
